@@ -17,6 +17,7 @@
 /lex
 
 %{
+
 const slice = function(array, from) {
     return array.slice(from, array.length - 1);
 }
@@ -27,12 +28,22 @@ const anlyseSemantics = function(tree){
        return;
     }
     if(slice(startTag, 1) !== slice(endTag, 2)){
-        throw Error("some");
+        throw Error(`${slice(startTag, 1)} does not have closing tag`);
     }
     for(child of children){
         anlyseSemantics(child);
     }
 }
+
+const elmConverter = function(element) {
+  const { startTag, text, attrs, endTag, children } = element;
+  const tag = startTag.slice(1, startTag.length - 1);
+  const elementAttrs = [];
+  Object.entries(attrs).forEach(([key,value]) => elementAttrs.push(`${key} ${value}`));
+  const childElements = children.map(elmConverter);
+  return `${tag}  [${elementAttrs}] [ text \"${text}\"] [${childElements}]`;
+};
+
 %}
 
 %start expressions
@@ -42,6 +53,8 @@ const anlyseSemantics = function(tree){
 expressions
     : ROOT EOF
         {   anlyseSemantics($1);
+            const elmTree = elmConverter($1);
+            console.log(elmTree);
             typeof console !== 'undefined' ? console.log(JSON.stringify($1)) : print($1);
           return $1; }
     ;
